@@ -1,0 +1,1 @@
+Handling user input by allowing him to X out of the window

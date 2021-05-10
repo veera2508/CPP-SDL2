@@ -1,5 +1,15 @@
 #include <stdio.h>
 #include <SDL2/SDL.h>
+#include <string>
+
+enum KeyPressSurfaces {
+    KEY_PRESS_SURFACE_DEFAULT,
+    KEY_PRESS_SURFACE_UP,
+    KEY_PRESS_SURFACE_DOWN,
+    KEY_PRESS_SURFACE_LEFT,
+    KEY_PRESS_SURFACE_RIGHT,
+    KEY_PRESS_SURFACE_TOTAL
+};
 
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
@@ -7,10 +17,13 @@ const int SCREEN_HEIGHT = 480;
 bool init();
 bool loadMedia();
 void close();
+SDL_Surface* loadSurface( std::string path );
 
-SDL_Window* gWindow = NULL; 
-SDL_Surface* gScreenSurface = NULL; 
-SDL_Surface* gHelloWorld = NULL; 
+
+SDL_Window* gWindow = NULL;
+SDL_Surface* gScreenSurface = NULL;
+SDL_Surface* gKeyPressSurfaces[ KEY_PRESS_SURFACE_TOTAL ];
+SDL_Surface* gCurrentSurface = NULL;
 
 //Initialize SDL Video Plugin and Window
 bool init() {
@@ -26,7 +39,6 @@ bool init() {
             success = false;
         }
         else {
-            //Get Surface of the Window
             gScreenSurface = SDL_GetWindowSurface( gWindow );
         }
     }
@@ -64,10 +76,20 @@ int main( int argc, char *args[] ) {
             printf("Failed to load Media!\n");
         }
         else {
-            //Blit transfers copy of src surface to dest surface
-            SDL_BlitSurface(gHelloWorld, NULL, gScreenSurface, NULL);
-            SDL_UpdateWindowSurface(gWindow); //Render Changes
-            SDL_Delay(2000);
+            bool quit = false;
+            SDL_Event e; //Variable to Store Event
+            //Main Loop
+            while (!quit) {
+                //Loop to get events from event queue
+                while (SDL_PollEvent( &e ) != 0) {
+                    //SDL_Quit event is pressing X
+                    if (e.type == SDL_QUIT)
+                        quit = true;
+                }
+                //Blit transfers copy of src surface to dest surface
+                SDL_BlitSurface(gHelloWorld, NULL, gScreenSurface, NULL);
+                SDL_UpdateWindowSurface(gWindow);
+            }
         }
     }
     close();

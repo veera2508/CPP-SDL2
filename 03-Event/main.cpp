@@ -12,6 +12,7 @@ SDL_Window* gWindow = NULL;
 SDL_Surface* gScreenSurface = NULL;
 SDL_Surface* gHelloWorld = NULL;
 
+//Initialize SDL Video Plugin and Window
 bool init() {
     bool success = true;
     if ( SDL_Init( SDL_INIT_VIDEO ) < 0) {
@@ -31,6 +32,7 @@ bool init() {
     return success;
 }
 
+//Load image into the surface
 bool loadMedia() {
     bool success = true;
     gHelloWorld = SDL_LoadBMP("sample.bmp");
@@ -41,6 +43,7 @@ bool loadMedia() {
     return success;
 }
 
+//Free up Resources
 void close() {
     SDL_FreeSurface( gHelloWorld );
     gHelloWorld = NULL;
@@ -61,12 +64,16 @@ int main( int argc, char *args[] ) {
         }
         else {
             bool quit = false;
-            SDL_Event e;
+            SDL_Event e; //Variable to Store Event
+            //Main Loop
             while (!quit) {
+                //Loop to get events from event queue
                 while (SDL_PollEvent( &e ) != 0) {
+                    //SDL_Quit event is pressing X
                     if (e.type == SDL_QUIT)
                         quit = true;
                 }
+                //Blit transfers copy of src surface to dest surface
                 SDL_BlitSurface(gHelloWorld, NULL, gScreenSurface, NULL);
                 SDL_UpdateWindowSurface(gWindow);
             }
