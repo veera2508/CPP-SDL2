@@ -1,3 +1,5 @@
 SetupTest/include
 SetupTest/lib
-*.png
+*.bmp
+app
+*.json
