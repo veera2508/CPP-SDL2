@@ -1,18 +1,29 @@
 #include <stdio.h>
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
 #include <string>
 
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 
+enum PORT_NO {
+    TOP_LEFT,
+    TOP_RIGHT,
+    BOTTOM,
+    PORT_TOTAL
+};
+
 bool init();
 bool loadMedia();
 void close();
+void initViewPorts();
+SDL_Texture* loadTexture( std::string path );
 
 
 SDL_Window* gWindow = NULL;
 SDL_Renderer* gRenderer = NULL;
 SDL_Texture* gTexture = NULL;
+SDL_Rect* gViewPorts[PORT_TOTAL];
 
 //Initialize SDL Video Plugin and Window
 bool init() {
@@ -40,9 +51,62 @@ bool init() {
 }
 
 
+
+SDL_Texture* loadTexture( std::string path ) {
+    //Surface to store the optimized image
+    SDL_Texture* newTexture = NULL;
+
+    //Surface to store the image
+    SDL_Surface* loadedSurface = IMG_Load(path.c_str());
+    if ( loadedSurface == NULL )
+        printf( "Unable to load image! SDL Error: %s\n", IMG_GetError() );
+    
+    else {
+        //Create texture from surface pixels
+
+        newTexture = SDL_CreateTextureFromSurface(gRenderer, loadedSurface);
+        if (newTexture == NULL) 
+            printf("Unable to create texture! SDL Error:%s\n", SDL_GetError());
+        
+        //get rid of old surface
+        SDL_FreeSurface(loadedSurface);
+    }
+    return newTexture;
+}
+
 bool loadMedia() {
     bool success = true;
+
+    gTexture = loadTexture( "viewport.png" );
+	if( gTexture == NULL ){
+		printf( "Failed to load texture image!\n" );
+		success = false;
+	}
+
 	return success;
+}
+
+void initViewPorts() {
+    //Top Left Viewport
+    gViewPorts[TOP_LEFT] = (SDL_Rect*) malloc(sizeof(SDL_Rect));
+    gViewPorts[TOP_LEFT]->x = 0;
+    gViewPorts[TOP_LEFT]->y = 0;
+    gViewPorts[TOP_LEFT]->w = SCREEN_WIDTH/2;
+    gViewPorts[TOP_LEFT]->h = SCREEN_HEIGHT/2;
+
+    //Top Right Viewport
+    gViewPorts[TOP_RIGHT] = (SDL_Rect*) malloc(sizeof(SDL_Rect));
+    gViewPorts[TOP_RIGHT]->x = SCREEN_WIDTH/2;
+    gViewPorts[TOP_RIGHT]->y = 0;
+    gViewPorts[TOP_RIGHT]->w = SCREEN_WIDTH/2;
+    gViewPorts[TOP_RIGHT]->h = SCREEN_HEIGHT/2;
+
+    //Bottom Viewport
+    gViewPorts[BOTTOM] = (SDL_Rect*) malloc(sizeof(SDL_Rect));
+    gViewPorts[BOTTOM]->x = 0;
+    gViewPorts[BOTTOM]->y = SCREEN_HEIGHT/2;
+    gViewPorts[BOTTOM]->w = SCREEN_WIDTH;
+    gViewPorts[BOTTOM]->h = SCREEN_HEIGHT/2;
 }
 
 
@@ -57,8 +121,11 @@ void close() {
     SDL_DestroyWindow( gWindow );
     gWindow = NULL;
 
+    IMG_Quit();
     SDL_Quit();
 }
+
+
 
 int main( int argc, char *args[] ) {
     if (!init()) {
@@ -71,6 +138,7 @@ int main( int argc, char *args[] ) {
         else {
             bool quit = false;
             SDL_Event e; //Variable to Store Event
+            initViewPorts();
             //Main Loop
             while (!quit) {
                 //Loop to get events from event queue
@@ -83,22 +151,15 @@ int main( int argc, char *args[] ) {
                 SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
                 //Clear Screen
                 SDL_RenderClear( gRenderer );
-                //Create and Draw rectangle filled with red
-                SDL_Rect fillRect = {SCREEN_WIDTH/4, SCREEN_HEIGHT/4, SCREEN_WIDTH/2, SCREEN_HEIGHT/2};
-                SDL_SetRenderDrawColor( gRenderer, 0xFF, 0x00, 0x00, 0xFF );
-                SDL_RenderFillRect( gRenderer, &fillRect );
-                //Create and Draw hollow rectangle with black outline
-                SDL_Rect outlineRect = {SCREEN_WIDTH/6, SCREEN_HEIGHT/6, 2*SCREEN_WIDTH/3, 2*SCREEN_HEIGHT/3};
-                SDL_SetRenderDrawColor( gRenderer, 0x00, 0x00, 0x00, 0xFF );
-                SDL_RenderDrawRect( gRenderer, &outlineRect );
-                //Draw green horizontal line
-                SDL_SetRenderDrawColor( gRenderer, 0x00, 0xFF, 0x00, 0x00 );
-                SDL_RenderDrawLine( gRenderer, 0, SCREEN_HEIGHT/2, SCREEN_WIDTH, SCREEN_HEIGHT/2 );
-                //Draw vertical line of blue dots
-                SDL_SetRenderDrawColor( gRenderer, 0x00, 0x00, 0xFF, 0x00 );
-                for (int i = 0; i < SCREEN_HEIGHT; i+=5) {
-                    SDL_RenderDrawPoint( gRenderer, SCREEN_WIDTH/2, i );
-                }
+                //Top left viewport
+                SDL_RenderSetViewport( gRenderer, gViewPorts[TOP_LEFT] );
+                SDL_RenderCopy( gRenderer, gTexture, NULL, NULL );
+                //Top right viewport
+                SDL_RenderSetViewport( gRenderer, gViewPorts[TOP_RIGHT] );
+                SDL_RenderCopy( gRenderer, gTexture, NULL, NULL );
+                //Bottom viewport
+                SDL_RenderSetViewport( gRenderer, gViewPorts[BOTTOM] );
+                SDL_RenderCopy( gRenderer, gTexture, NULL, NULL );
                 //Update the renderer
                 SDL_RenderPresent( gRenderer );
             }
