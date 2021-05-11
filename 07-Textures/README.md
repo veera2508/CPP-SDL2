@@ -1,0 +1,1 @@
+Hardware accelerated 2D texture rendering

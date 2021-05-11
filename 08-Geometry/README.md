@@ -1,0 +1,1 @@
+Hardware accelerated primitive geometry rendering
