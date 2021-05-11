@@ -45,10 +45,24 @@ bool init() {
                 printf("Renderer could not be created! SDL Error: %s\n", SDL_GetError());
                 success = false;
             }
-        }  
+            else {
+                //Initialize renderer color
+                SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
+
+                //Initialize loading for png
+                int imgFlags = IMG_INIT_PNG; //flag for png loading
+                //We pass the flags required to load and it returns flags successfully loaded
+                if ( !( IMG_Init( imgFlags ) & imgFlags ) ) {
+                    printf("SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
+                    success = false;
+                }
+            }
+        }
+        
     }
     return success;
 }
+
 
 
 
