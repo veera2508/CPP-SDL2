@@ -11,7 +11,7 @@ SDL_Renderer* gRenderer = NULL;
 //Wrapper class for texture
 class LTexture {
     public:
-        //Constructor
+        //ConstructorColor Modulation of textures
         LTexture();
 
         //Destructor
