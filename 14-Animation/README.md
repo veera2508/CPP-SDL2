@@ -1,0 +1,1 @@
+Animation using sprite sheet and vsync rendering
