@@ -1,0 +1,1 @@
+Color keying to add foreground sprite to background image
