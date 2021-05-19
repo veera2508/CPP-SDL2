@@ -1,6 +1,2 @@
-SetupTest/include
-SetupTest/lib
-*.bmp
 app
 *.json
-*.png
