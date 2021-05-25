@@ -2,12 +2,15 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
 #include <string>
+#include <SDL2/SDL_ttf.h>
+#include <cmath>
 
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 const int WALKING_ANIMATION_FRAMES = 4;
 SDL_Window* gWindow = NULL;
 SDL_Renderer* gRenderer = NULL;
+TTF_Font *gFont = NULL;
 
 class LTexture {
     public:
@@ -22,6 +25,9 @@ class LTexture {
 
         //Dealocates texture
         void free();
+
+        //Creates image from font string
+        bool loadFromRenderedText(std::string textureText, SDL_Color textColor);
 
         //Renders texture at a given point
         void render( int x, int y, SDL_Rect* clip = NULL, double angle = 0.0, SDL_Point* center = NULL, SDL_RendererFlip flip = SDL_FLIP_NONE );
@@ -97,7 +103,30 @@ void LTexture::free() {
     }
 }
 
-void LTexture::render( int x, int y, SDL_Rect* clip, double angle, SDL_Point* center, SDL_RendererFlip flip){
+bool LTexture::loadFromRenderedText(std::string textureText, SDL_Color textColor) {
+    //Free the previous texture
+    free();
+    //Render text surface
+    SDL_Surface* textSurface = TTF_RenderText_Solid(gFont, textureText.c_str(), textColor);
+    if (textSurface == NULL)
+        printf("Unable to render text surface! SDL Error: %s\n", TTF_GetError());
+    else {
+        mTexture = SDL_CreateTextureFromSurface(gRenderer, textSurface);
+        if (mTexture == NULL)
+            printf("Cannot create texture! SDL Error: %s\n", SDL_GetError());
+        else {
+            //Set image dimensions
+            mWidth = textSurface->w;
+            mHeight = textSurface->h;
+        }
+        SDL_FreeSurface(textSurface);
+    }
+
+    //Return success or failure
+    return mTexture != NULL; 
+}
+
+void LTexture::render( int x, int y, SDL_Rect* clip, double angle, SDL_Point* center, SDL_RendererFlip flip) {
     SDL_Rect renderquad = { x, y, mWidth, mHeight };
     //Set clip rendering dimensions
     if (clip != NULL) {
@@ -130,24 +159,35 @@ int LTexture::getWidth() {
     return mWidth;
 }
 
-LTexture gArrowTexture;
+LTexture gTextTexture;
 
 bool loadMedia() {
     bool success = true;
 
-    //Load Foo texture
-    if ( !gArrowTexture.loadFromFile("arrow.png") ) {
-        printf("Failed to load sprite sheet!\n");
+    //Load font
+    gFont = TTF_OpenFont("lazy.ttf", 28);
+    if (gFont == NULL) {
+        printf("Unable to load font SDL Error: %s\n", TTF_GetError());
         success = false;
+    }
+    //render the text
+    else {
+        SDL_Color textColor = {0, 0, 0};
+        if (!gTextTexture.loadFromRenderedText("The quick brown fox jumps over the lazy dog", textColor)) {
+            printf("Error loading the text!\n");
+            success = false;
+        }
     }
     return success;
 }
 
 void close() {
-    gArrowTexture.free();
+    gTextTexture.free();
 
     SDL_DestroyRenderer( gRenderer );
     SDL_DestroyWindow( gWindow );
+    TTF_CloseFont(gFont);
+    gFont = NULL;
     gWindow = NULL;
     gRenderer = NULL;
 
@@ -185,10 +225,16 @@ bool init() {
                     printf("SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
                     success = false;
                 }
+
+                if (TTF_Init() == -1) {
+                    printf("SDL_ttf could not be initialized! Error: %s\n", TTF_GetError());
+                    success = false;
+                }
             }
         }
         
     }
+
     return success;
 }
 
@@ -203,44 +249,14 @@ int main( int argc, char *args[] ) {
         else {
             bool quit = false;
             SDL_Event e; //Variable to Store Event
-            double degrees = 0;
-            SDL_RendererFlip flipType = SDL_FLIP_NONE;
             //Main Loop
             while (!quit) {
                 //Loop to get events from event queue
                 while (SDL_PollEvent( &e ) != 0) {
                     //User requests quit
-                    if( e.type == SDL_QUIT )
-                    {
+                    if( e.type == SDL_QUIT ) {
                         quit = true;
                     }
-                    else if( e.type == SDL_KEYDOWN )
-                    {
-                        switch( e.key.keysym.sym )
-                        {
-                            case SDLK_a:
-                            degrees -= 60;
-                            break;
-                            
-                            case SDLK_d:
-                            degrees += 60;
-                            break;
-
-                            case SDLK_q:
-                            flipType = SDL_FLIP_HORIZONTAL;
-                            break;
-
-                            case SDLK_w:
-                            flipType = SDL_FLIP_NONE;
-                            break;
-
-                            case SDLK_e:
-                            flipType = SDL_FLIP_VERTICAL;
-                            break;
-                        }
-                    }
-                    
-
                 }
                 //Initialize renderer color
                 SDL_SetRenderDrawColor( gRenderer, 0xFF, 0xFF, 0xFF, 0xFF );
@@ -248,7 +264,7 @@ int main( int argc, char *args[] ) {
                 SDL_RenderClear( gRenderer );
                 
                 //Render the texture
-                gArrowTexture.render((SCREEN_WIDTH - gArrowTexture.getWidth())/2, (SCREEN_HEIGHT - gArrowTexture.getHeight())/2, NULL, degrees, NULL, flipType);
+                gTextTexture.render((SCREEN_WIDTH - gTextTexture.getWidth())/2, (SCREEN_HEIGHT - gTextTexture.getHeight())/2);
                 
                 //Update screen
                 SDL_RenderPresent( gRenderer );
